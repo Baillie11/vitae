@@ -1,0 +1,281 @@
+{% extends 'authenticate/base.html' %}
+{% load static %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'authenticate/style.css' %}">
+<style>
+    .draggable-item-container {
+        min-height: 100px;
+        border: 1px solid black;
+        margin-bottom: 10px;
+    }
+
+    .draggable {
+        margin: 10px;
+    }
+
+
+</style>
+{% endblock css %}
+{% block content %}
+<div class="row">
+    <div class="col-sm-9">
+        <div class="container-fluid">
+            <h1 class="text-center">Vitae</h1>
+            <h3 class="text-center">Search Templates</h3>
+            <div class="row">
+                <div class="col">
+                    <div class="draggable-item-container" style="display: flex" ondrop="drop(event)"
+                        ondragover="allowDrop(event)">
+                        <p id="p1" class="draggable" draggable="false" ondragstart="drag(event)">
+                            COMING SOON
+                        </p>
+                        <p id="p2" class="draggable" draggable="false" ondragstart="drag(event)">
+                            COMING SOON
+                        </p>
+                        <p id="p3" class="draggable" draggable="false" ondragstart="drag(event)">
+                            COMING SOON
+                        </p>
+                                            </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid h-100">
+            <div class="flex text-center">
+                <h3 class="text-center">Letter Body</h3>
+                <button onclick="Export2Doc('letterbody','Cover Letter');">Export to MS Word</button>
+            </div>
+
+            <h5>
+                <div class="text-center">Drag and drop template and Paragraphs below:</div>
+            </h5>
+
+            <div class="row h-100">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <button id="save-letter" class="btn btn-default float-end"><i class="fa fa-save"></i>
+                            Save</button>
+                    </div>
+                </div>
+                <div class="col h-100">
+                    <div id="letterbody" class="draggable-item-container h-100" ondrop="drop(event)"
+                        ondragover="allowDrop(event)" data-id="{% if letter.id %}{{ letter.id }}{% endif %}">
+                        {% if letter.letter %}
+                        {{ letter.letter }}
+                        {% else %}
+                        <div>
+                            {% if user.is_authenticated %}
+                            <p id="datepiker"></p>
+                            {{ user.first_name }} {{ user.last_name}}</br>
+                            {{ user.address_1}}</br>
+                            {{ user.address_2}}
+                            {{ user.suburb}}, {{ user.state}}, {{ user.country}}</br>
+                            Phone: {{ user.phone}}</br>
+                            eMail: {{ user.email}}</p>
+
+                            <p> <span id="businessname"></span><br>
+                                <span id="businessaddress1"></span><br>
+                                <span id="businessaddress2"></span><br>
+                                <span id="businesssuburb" id="businessstate"></span>
+                            </p>
+
+
+
+                            <p>Reference : <span id="reference"></span></p>
+                            <p>Application for (<span id="recriterrole"></span>)</p>
+
+                            Dear <span id="recritername"></span><br />
+
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $('#datepiker').html(moment().format('LL'))
+        });
+
+        $("body").on("click", "#infos", function () {
+
+            if ($('#RecName').val() !== '' && $('#RecRole').val() !== '') {
+                $('#recritername').html($('#RecName').val())
+                $('#recriterrole').html($('#RecRole').val())
+                $('#businessname').html($('#BusName').val())
+                $('#businessaddress1').html($('#BusAddress1').val())
+                $('#businessaddress2').html($('#BusAddress2').val())
+                $('#businesssuburb').html($('#BusCity').val())
+                $('#businessstate').html($('#BusState').val())
+
+                $('#reference').html($('#RefIn').val())
+                $('#recriterrole').html($('#RecRole').val())
+            } else {
+            }
+
+            return false
+        })
+        // if #p5 clicked, get data-id and send to server
+        const editResponse = (id) => {
+            window.location.href = `{% url 'response' %}?id=${id}`;
+        }
+        $('#save-letter').click(() => {
+            const letter = $('#letterbody').html();
+            $.ajax({
+                url: location.href,
+                type: 'POST',
+                data: {
+                    id: $('#letterbody').data('id'),
+                    letter: letter,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (data) {
+                    data = $.parseJSON(data)
+                    $('#letterbody').data('id', data.id);
+                    $('#letterbody').html(data.letter);
+                },
+                error: function (data) {
+                    console.log(data);
+                }
+            });
+        });
+        {% if letter.id %}
+        $('#letterbody').html($('#letterbody').text());
+        {% endif %}
+    </script>
+    <div class="col-sm-3">
+        <div class="container-fluid">
+            <h3 class="text-center">Input Fields</h3>
+            <div class="row">
+                <div class="col">
+                    <div class="draggable-item-container" ondrop="drop(event)" ondragover="allowDrop(event)">
+
+                        <form onsubmit="return false" class="text-center">
+                            <label>Role Title</label></br>
+                            <input type="text" id="RecRole" name="role_title"></br>
+
+                            <label> Recruiter Name</label></br>
+                            <input type="text" id="RecName" name="recruiter_name"></br>
+
+                            <label> Business Name</label></br>
+                            <input type="text" id="BusName" name="business_name"></br>
+
+                            <label> Address Line 1</label></br>
+                            <input type="text" id="BusAddress1" name="business_address1"></br>
+
+                            <label> Business Line 2</label></br>
+                            <input type="text" id="BusAddress2" name="business_address2"></br>
+
+                            <label> City</label></br>
+                            <input type="text" id="BusCity" name="business_city"></br>
+
+                            <label> State</label></br>
+                            <input type="text" id="BusState" name="business_state"></br>
+
+                            <label> Reference</label></br>
+                            <input type="text" id="RefIn" name="reference"></br>
+
+                            <button id="infos" class="mt-3">Submit</button>
+                        </form>
+
+
+
+                        <!--<p class="draggable" draggable="true" ondragstart="drag(event)">Name: {{ user.first_name }} {{ user.last_name}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">Address 1: {{ user.address_1}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">Address 2: {{ user.address_2}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">Suburb: {{ user.suburb}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">Postcode: {{ user.postcode}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">State: {{ user.state}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">Country: {{ user.country}}</p>
+
+                                <p class="draggable" draggable="true" ondragstart="drag(event)">eMail: {{ user.email}}</p>-->
+
+
+
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <h3 class="text-center">My Fields</h2>
+                <div class="row">
+                    <div class="col">
+                        <div class="draggable-item-container" style="display: flex; flex-direction: column"
+                            ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <div id="add-response" class="btn btn-default text-bold"><i style="cursor: pointer;"
+                                    class="fa fa-plus"></i> Add Response</div>
+
+                            {% for item in myfields %}
+                            <p id="p5" class="draggable" draggable="true" ondragstart="drag(event)">
+                                <!--<strong>{{ item.title }}</strong><br>-->
+                                {{ item.content }}
+                                <i class="fa fa-pencil-alt" onclick="editResponse('{{ item.id }}')"></i>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+        </div>
+        <div class="container-fluid">
+            <h3 class="text-center">Pre Completed Fields</h2>
+                <div class="row">
+                    <div class="col">
+                        <div class="draggable-item-container" style="display: flex; flex-direction: column"
+                            ondrop="drop(event)" ondragover="allowDrop(event)">
+
+                            {% for item in precompletefields %}
+                            <p id="p5" class="draggable" draggable="true" ondragstart="drag(event)">
+                                <!--<strong>{{ item.title }}</strong><br>-->
+                                {{ item.content }}
+                                <i class="fa fa-pencil-alt" onclick="editResponse('{{ item.id }}')"></i>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block js %}
+<script defer src="{% static 'authenticate/app.js' %}"></script>
+<script>
+    const allowDrop = (event) => {
+        event.preventDefault();
+    }
+
+    const drag = (event) => {
+        event.dataTransfer.setData("text", event.target.id);
+    }
+
+    const drop = (event) => {
+        event.preventDefault();
+        const data = event.dataTransfer.getData("text");
+        event.target.appendChild(document.getElementById(data));
+    }
+    {% if user.is_authenticated %}
+    $('#add-response').click(() => {
+        window.location.href = `{% url 'response' %}`;
+    })
+    {% endif %}
+
+    // if div#letterbody dom changed ask user to save it before leave
+    $('#letterbody').on('DOMSubtreeModified', () => {
+        window.onbeforeunload = () => {
+            // click #save-letter
+            $('#save-letter').click();
+        }
+    });
+
+</script>
+{% endblock js %}
